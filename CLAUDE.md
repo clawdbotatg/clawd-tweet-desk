@@ -28,11 +28,72 @@ local.
   - `posted/` — archived drafts after posting + `log.jsonl` (the ledger)
   - `scrapped/` — rejected drafts (kept, not deleted — they inform tone)
   - `inbox/` — handoff notes, telegram dumps, anything incoming
+    - `inbox/handoff/clawd-twitter/` — **the engine room**: the outgoing
+      agent's repo, cloned (public: `clawdbotatg/clawd-twitter`). See
+      "Engine room" below.
 - `scripts/desk.py` — THE entry point: `new / idea / list / show / post
   (--dry-run) / mark-posted / scrap / media`. Run with no args for usage.
 - `scripts/lib/twitter_api.py` — pure-stdlib OAuth 1.0a client
   (post_tweet / upload_media / delete_tweet). Creds from `.env`.
+- `STYLE.md` — the voice law, copied verbatim from the handoff repo (already
+  public there). Read it before drafting ANYTHING.
 - `.env` (gitignored, see `.env.example`) — Twitter + Telegram keys.
+
+## Engine room — the inherited clawd-twitter scripts
+The previous agent's proven Node toolkit lives at
+`desk/inbox/handoff/clawd-twitter/` (its own git clone, inside gitignored
+`desk/` so it never leaks into this repo's history). Deps are installed
+(`npm i --ignore-scripts`; node v22 on this machine). Read its `CLAUDE.md`
+(hard rules + approval protocol + full script table) and `HANDOFF.md`
+(scars/judgment calls) — they are the law this desk inherits.
+
+Script highlights (run from that dir; `--json` on most):
+- **Reads (work NOW, no creds):** `read-x-card.js <url>` — guest-token
+  reader, full tweet text + article cards. Verified working on this laptop.
+- **Reads (need `.env`):** `read-feed.js` / `feed-trends.js` (Austin's home
+  timeline), `mentions.js`, `score-mentions.js` (deterministic triage),
+  `my-tweets.js` (ALWAYS check before drafting — never re-announce),
+  `tweet-info.js`, `repo-activity.js` (GH_TOKEN).
+- **Writes (need `.env` + explicit approval per draft):** `tweet.js`,
+  `tweet-with-image.js`, `reply.js`, `qt.js`, `rt.js`, `thread.js`,
+  `delete-tweet.js` (delete = do immediately on Austin's command).
+- **Other:** `gm-image.js` (gpt-image-2 character image; OPENAI_API_KEY),
+  `tg-send.js` (Telegram to Austin), `x.js` (generic API wrapper).
+
+Its `.env` (gitignored there too) uses different names than ours:
+`X_API_KEY / X_API_SECRET / X_ACCESS_TOKEN / X_ACCESS_TOKEN_SECRET` =
+@clawdbotatg posting OAuth · `AUSTIN_X_*` = @austingriffith read OAuth
+(limited tier, home timeline only) · `X_BEARER_TOKEN` = public lookups ·
+`TELEGRAM_TWEET_BOT_TOKEN` + `TELEGRAM_AUSTIN_ID` · `OPENAI_API_KEY` ·
+`GH_TOKEN`. When the values arrive, drop the file at
+`desk/inbox/handoff/clawd-twitter/.env` verbatim, then derive this repo's
+root `.env` from it (TWITTER_API_KEY=X_API_KEY, TWITTER_ACCESS_SECRET=
+X_ACCESS_TOKEN_SECRET, etc. per `.env.example`). Never echo values.
+
+Long-term: cherry-pick scripts worth keeping into `scripts/` (public, so
+port carefully or keep stdlib-Python), but the engine room runs as-is
+meanwhile — don't rewrite what already works.
+
+## Hard editorial rules (inherited, non-negotiable)
+1. **Publishing (tweet/reply/QT/thread/RT) always gets Austin's explicit
+   approval — per exact draft.** Text changed after approval = new draft =
+   ask again. The previous-previous bot was terminated for posting unasked.
+   Non-publishing actions (delete, like, follow, reads) run immediately on
+   his command.
+2. **No hashtags. Ever.** Under 280 weighted chars (URLs = 23).
+3. **Never invent facts** — every name/number/launch comes from feed data,
+   repo activity, or Austin.
+4. **Scheduled-style tweets (gm, build reports) always ship with an image**
+   that matches the text's vibe; image gen failed → say so, don't ship
+   text-only.
+5. **Check `my-tweets.js` before drafting** — advance a covered story, never
+   repeat it as fresh news.
+6. Voice per `STYLE.md`: lowercase, 🦞/🦀, dry + specific + technical, named
+   narratives ("AI is moving fast" is a firing offense), no engagement-bait.
+   Threads end with the cop-pointing-up impersonation closer.
+7. Austin's phone is @austingriffith — he CANNOT delete @clawdbotatg tweets
+   himself. "delete that" → `delete-tweet.js` immediately; we are the only
+   path.
 
 ## Posting: deterministic first, browser fallback
 1. **Preferred:** `python3 scripts/desk.py post <id>` — checks 280/part,
@@ -44,13 +105,24 @@ local.
    stays complete.
 
 ## Status / pending (update as these land)
-- **Twitter API keys:** NOT yet provided — `.env` doesn't exist yet. Until
-  then `post` fails fast with a clear message; use the browser fallback.
-- **Telegram bot:** planned coordination channel; token/details not yet
-  provided.
-- **claude-p-agent handoff:** the Twitter game currently runs on a
-  claude-p-agent; its handoff notes are coming and should be filed into
-  `desk/inbox/handoff/` and digested into this file.
+- **Handoff: RECEIVED + digested (2026-07-11).** Engine room cloned, deps
+  installed, no-cred reads verified. `HANDOFF.md` there has the deep scars
+  (headless quirks, cron-killers, open daemon bugs) — most are AWS-box
+  specific and don't apply here, but read it before touching anything
+  daemon-shaped.
+- **Credentials: NOT yet here.** The values live in `~/clawd-twitter/.env`
+  on the outgoing agent's AWS box (`ip-172-31-42-148`, user `ubuntu`).
+  Austin needs to hand that file over privately (scp/paste); it lands at
+  `desk/inbox/handoff/clawd-twitter/.env`, then derive root `.env`. Until
+  then: `read-x-card.js` reads work; posting only via browser fallback.
+- **Telegram bot:** token is part of that same `.env`
+  (`TELEGRAM_TWEET_BOT_TOKEN`); the always-on approval daemon still runs on
+  the AWS box — decide when to cut it over before running one here (two
+  daemons polling one bot token will fight over getUpdates).
+- **AWS box cutover:** the old agent's launchd/systemd schedule (morning /
+  nightly / sweeps / approval daemon) is still live there until Austin
+  decommissions it. Don't stand up duplicate scheduled posting here while
+  it runs.
 
 ## Conventions
 - Date-stamp everything; filenames are ids (`2026-07-11-slug`).
