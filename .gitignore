@@ -1,0 +1,13 @@
+# ── secrets — never commit ──────────────────────────────
+.env
+*.env
+!.env.example
+
+# ── the desk itself — local working material, never public ──
+desk/
+
+# ── runtime junk ────────────────────────────────────────
+__pycache__/
+*.pyc
+.DS_Store
+node_modules/
