@@ -99,7 +99,7 @@ meanwhile — don't rewrite what already works.
 1. **Preferred:** `python3 scripts/desk.py post <id>` — checks 280/part,
    uploads media, posts threads as reply chains, archives + logs.
    Always `--dry-run` first on anything non-trivial.
-2. **Fallback (no keys yet / API failure):** post via the claude-in-chrome
+2. **Fallback (API failure):** post via the claude-in-chrome
    browser extension, then IMMEDIATELY record it:
    `python3 scripts/desk.py mark-posted <id> --tweet-id <id>` so the ledger
    stays complete.
@@ -110,15 +110,16 @@ meanwhile — don't rewrite what already works.
   (headless quirks, cron-killers, open daemon bugs) — most are AWS-box
   specific and don't apply here, but read it before touching anything
   daemon-shaped.
-- **Credentials: NOT yet here.** The values live in `~/clawd-twitter/.env`
-  on the outgoing agent's AWS box (`ip-172-31-42-148`, user `ubuntu`).
-  Austin needs to hand that file over privately (scp/paste); it lands at
-  `desk/inbox/handoff/clawd-twitter/.env`, then derive root `.env`. Until
-  then: `read-x-card.js` reads work; posting only via browser fallback.
-- **Telegram bot:** token is part of that same `.env`
-  (`TELEGRAM_TWEET_BOT_TOKEN`); the always-on approval daemon still runs on
-  the AWS box — decide when to cut it over before running one here (two
-  daemons polling one bot token will fight over getUpdates).
+- **Credentials: RECEIVED (2026-07-11 evening).** Scp'd from the AWS box
+  (Austin's ok) to `desk/inbox/handoff/clawd-twitter/.env`; root `.env`
+  derived from it (regenerate, don't hand-edit). Verified live: clawd-OAuth
+  reads (`my-tweets.js`), Austin-OAuth home timeline (`read-feed.js`,
+  `feed-trends.js`), Telegram (`tg-send.js`). Posting scripts share the
+  same OAuth pair — first real approved post is the remaining proof.
+- **Telegram bot:** token works from here. But the always-on approval
+  daemon still runs on the AWS box — don't run a poller/daemon here until
+  cutover (two daemons polling one bot token fight over getUpdates).
+  One-way `tg-send.js` messages are safe anytime.
 - **AWS box cutover:** the old agent's launchd/systemd schedule (morning /
   nightly / sweeps / approval daemon) is still live there until Austin
   decommissions it. Don't stand up duplicate scheduled posting here while
