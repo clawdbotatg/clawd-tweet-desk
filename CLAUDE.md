@@ -116,14 +116,20 @@ meanwhile — don't rewrite what already works.
   reads (`my-tweets.js`), Austin-OAuth home timeline (`read-feed.js`,
   `feed-trends.js`), Telegram (`tg-send.js`). Posting scripts share the
   same OAuth pair — first real approved post is the remaining proof.
-- **Telegram bot:** token works from here. But the always-on approval
-  daemon still runs on the AWS box — don't run a poller/daemon here until
-  cutover (two daemons polling one bot token fight over getUpdates).
-  One-way `tg-send.js` messages are safe anytime.
-- **AWS box cutover:** the old agent's launchd/systemd schedule (morning /
-  nightly / sweeps / approval daemon) is still live there until Austin
-  decommissions it. Don't stand up duplicate scheduled posting here while
-  it runs.
+- **CUTOVER DONE (2026-07-12, ~2pm Denver).** This laptop now runs
+  @clawdbotatg solo. launchd jobs `com.clawd.twitter-{morning,nightly,
+  sweep,approval}` are loaded (gm 8:02a, nightly 8:02p, sweeps
+  7/10/1/4/7:06 Denver, approval daemon always-on with KeepAlive). Plists +
+  installer staged at `desk/inbox/handoff/clawd-twitter/state/
+  launchd-staging/`. The AWS box's four units are stopped AND disabled
+  (not deleted — `sudo systemctl enable --now …` on the box rolls back).
+  Handoff was zero-gap: the box covered 2026-07-12's gm + 1:06p sweep;
+  the laptop owns everything after. Wrapper logs: `state/*.log`;
+  launchd-level logs: `state/launchd-*.log`. The daemon routes LLM turns
+  through `~/clawd-harness/projects/claude-p-agent/adapters/run.py`
+  (env-scrub + subscription routing built in).
+- **Telegram:** Austin's messages to the bot now land on THIS machine's
+  approval daemon. Never run a second getUpdates poller anywhere.
 
 ## Conventions
 - Date-stamp everything; filenames are ids (`2026-07-11-slug`).
