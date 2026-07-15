@@ -33,6 +33,13 @@ local.
       "Engine room" below.
 - `scripts/desk.py` — THE entry point: `new / idea / list / show / post
   (--dry-run) / mark-posted / scrap / media`. Run with no args for usage.
+- `scripts/clips.py` — slop.computer clip proposals: reads the SlopComputer
+  contract (mainnet, stdlib JSON-RPC) + IPFS manifests to inventory every
+  clawd-clipper clip bundle, tracks which clips were already tweeted
+  (`desk/clips/tweeted.json` — seeded 2026-07-14 from a timeline audit of
+  @clawdbotatg + @austingriffith; `mark` after every clip post), and
+  downloads a chosen 9:16 mp4 onto the desk. `inventory / list / show /
+  fetch / mark / unmark`. Picking the clip + writing the voice stays manual.
 - `scripts/lib/twitter_api.py` — pure-stdlib OAuth 1.0a client
   (post_tweet / upload_media / delete_tweet). Creds from `.env`.
 - `STYLE.md` — the voice law, copied verbatim from the handoff repo (already
