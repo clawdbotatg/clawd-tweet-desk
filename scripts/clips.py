@@ -25,11 +25,15 @@ keccak, so they can't be derived at runtime).
 """
 
 import json
+import os
 import re
 import sys
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "lib"))
+from twitter_api import load_env
 
 ROOT = Path(__file__).resolve().parent.parent
 DESK = ROOT / "desk"
@@ -41,11 +45,15 @@ CONTRACT = "0xf3ce3614fe8cd4294a0bf05d10cfda9d9cbc4886"
 SEL_EPISODE_COUNT = "0x6be153ae"  # episodeCount()
 SEL_GET_EPISODES = "0xa75cd791"  # getEpisodes(uint256,uint256)
 GATEWAY = "https://media.slop.computer/ipfs"
+# ETH_RPC in .env (e.g. a local node) is tried first; public RPCs are fallback.
 RPCS = [
     "https://eth.llamarpc.com",
     "https://ethereum-rpc.publicnode.com",
     "https://cloudflare-eth.com",
 ]
+_local_rpc = load_env().get("ETH_RPC")
+if _local_rpc:
+    RPCS.insert(0, _local_rpc)
 
 
 # Some public RPCs (and CDNs in front of gateways) 403 urllib's default UA.
